@@ -6,30 +6,32 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
-
 public class RabbitMqService {
 
     private final RabbitTemplate rabbitTemplate;
+    private final EmailService emailService;
 
     public static final String OTP_EXCHANGE = "otp.exchange";
     public static final String OTP_QUEUE = "otp.queue";
     public static final String OTP_ROUTING_KEY = "otp.send";
-    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+    private static final Logger log = LoggerFactory.getLogger(RabbitMqService.class);
+
+    @Value("${email.enabled}")
+    private boolean emailEnabled;
 
     @Autowired
-    public RabbitMqService(RabbitTemplate rabbitTemplate) {
+    public RabbitMqService(RabbitTemplate rabbitTemplate, EmailService emailService) {
         this.rabbitTemplate = rabbitTemplate;
+        this.emailService = emailService;
     }
 
     /**
      * Sends OTP notification to RabbitMQ queue
      */
-
-
-
     public void sendOtpNotification(OtpEvent otpEvent) {
         try {
             rabbitTemplate.convertAndSend(OTP_EXCHANGE, OTP_ROUTING_KEY, otpEvent);
@@ -41,32 +43,32 @@ public class RabbitMqService {
     }
 
     /**
-     * Consumes OTP messages from the queue and simulates email sending
+     * Consumes OTP messages from the queue and sends real email
      */
     @RabbitListener(queues = OTP_QUEUE)
     public void consumeOtpMessage(OtpEvent otpEvent) {
         try {
             log.info("Received OTP message for email: {}", otpEvent.getEmail());
 
-            // Simulate email sending (in real application, integrate with email service)
-            simulateEmailSending(otpEvent);
+            if (emailEnabled) {
+                // Send real email
+                emailService.sendOtpEmail(otpEvent);
+                log.info("Real OTP email sent successfully to: {}", otpEvent.getEmail());
+            } else {
+                // Fallback to simulation for development
+                simulateEmailSending(otpEvent);
+                log.info("OTP email simulated for: {}", otpEvent.getEmail());
+            }
 
-            log.info("OTP email sent successfully to: {}", otpEvent.getEmail());
         } catch (Exception e) {
             log.error("Failed to process OTP message for email: {}", otpEvent.getEmail(), e);
         }
     }
 
     /**
-     * Simulates sending email with OTP
+     * Simulates sending email with OTP (fallback for development)
      */
     private void simulateEmailSending(OtpEvent otpEvent) {
-        // In a real application, you would integrate with an email service like:
-        // - SendGrid
-        // - Amazon SES
-        // - JavaMail API
-        // - etc.
-
         log.info("=== EMAIL SIMULATION ===");
         log.info("To: {}", otpEvent.getEmail());
         log.info("Subject: Your OTP Code");
