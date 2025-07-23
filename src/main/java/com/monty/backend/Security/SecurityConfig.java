@@ -40,6 +40,27 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        // allow swagger UI static resources
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/webjars/**"
+                        ).permitAll()
+
+                        // allow the OpenAPI JSON & YAML
+                        .requestMatchers(
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/api-docs",            // if you remapped it
+                                "/api-docs/**"
+                        ).permitAll()
+
+                        // **this** is the UI’s bootstrap JSON
+                        .requestMatchers(
+                                "/v3/api-docs/swagger-config",
+                                "/api-docs/swagger-config"
+                        ).permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
