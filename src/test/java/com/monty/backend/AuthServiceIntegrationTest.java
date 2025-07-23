@@ -10,6 +10,9 @@ import com.monty.backend.Util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -30,7 +33,14 @@ import static org.mockito.Mockito.*;
  * Integration test for AuthService that tests with actual Spring context
  * Uses H2 in-memory database for testing as configured in your pom.xml
  */
-@SpringBootTest
+@SpringBootTest(
+        properties = {
+                "spring.datasource.url=jdbc:h2:mem:testdb",
+                "spring.datasource.driver-class-name=org.h2.Driver",
+                "spring.jpa.hibernate.ddl-auto=create-drop",
+                "email.enabled=false"
+        }
+)
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:testdb",
@@ -39,6 +49,10 @@ import static org.mockito.Mockito.*;
         "email.enabled=false"
 })
 @Transactional
+@EnableAutoConfiguration(exclude = {
+        RedisAutoConfiguration.class,
+        RedisRepositoriesAutoConfiguration.class
+})
 public class AuthServiceIntegrationTest {
 
     @Autowired
